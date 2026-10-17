@@ -1,0 +1,72 @@
+syntax = "proto3";
+package kizuna.meridian.items.v1;
+
+import "kizuna/meridian/v1/protocol.proto";
+
+option java_package = "dev.kizuna.meridian.items.protocol.pb";
+option java_outer_classname = "ItemMessages";
+
+// 只引用服务器已有物品；不携带物品 NBT、消费数量或可执行效果。
+message ItemSource {
+  oneof location {
+    uint32 player_slot = 1;
+    string stored_item_id = 2; // BS3D 随身容器内实例 UUID，或穿戴容器 UUID。
+  }
+}
+
+message UseRequest {
+  uint32 protocol_version = 1;
+  string request_id = 2; // 规范 UUID；同一调用者的重试必须复用。
+  string binding_id = 3;
+  string registry_revision = 4;
+  string body_id = 5;
+  ItemSource source = 6;
+  int64 inventory_revision = 7;
+  bytes stack_fingerprint = 8; // BS3D StackCodec 的 SHA-256，包含数量和完整 NBT。
+}
+
+enum FailureCode {
+  FAILURE_CODE_UNSPECIFIED = 0;
+  INVALID_REQUEST = 1;
+  ACCESS_DENIED = 2;
+  UNKNOWN_BINDING = 3;
+  REGISTRY_CHANGED = 4;
+  TRIGGER_MISMATCH = 5;
+  ITEM_CHANGED = 6;
+  INVENTORY_CHANGED = 7;
+  INSUFFICIENT_ITEMS = 8;
+  CONTAINER_CONSUMPTION_UNSUPPORTED = 9;
+  EFFECT_REJECTED = 10;
+  REQUEST_ID_CONFLICT = 11;
+  INTERNAL_ERROR = 12;
+}
+
+message UseFailure {
+  FailureCode code = 1;
+  // 原样保留 Meridian 错误，不翻译异常文本或复刻上游枚举。
+  kizuna.meridian.v1.FailureCode meridian_code = 2;
+}
+
+message UseCommitted {
+  string effect_id = 1;
+  uint32 consumed = 2;
+  int64 previous_inventory_revision = 3;
+  int64 inventory_revision = 4;
+}
+
+message UseResponse {
+  uint32 protocol_version = 1;
+  string request_id = 2;
+  oneof result {
+    UseCommitted committed = 3;
+    UseFailure failure = 4;
+  }
+}
+
+// 宿主内部回执，与物品候选、身体和 Meridian 回执联合持久化；不接受客户端上传。
+message UseReceipt {
+  string caller_id = 1;
+  string trigger_id = 2; // 由服务器真实事件提供。
+  UseRequest request = 3;
+  UseCommitted committed = 4;
+}

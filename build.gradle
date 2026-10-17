@@ -1,0 +1,76 @@
+plugins {
+    id 'java-library'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'com.google.protobuf' version '0.9.6'
+}
+
+group = 'dev.kizuna.meridian.items'
+version = '0.1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+def bs3dDir = file(findProperty('bs3dDir') ?: '../backpack-and-storage-3D')
+def frameworkDir = file(findProperty('frameworkDir') ?: '../Kizuna-Inventory-UI-Framework')
+def bs3dJar = new File(bs3dDir, 'server/build/libs/backpack-storage-3d-server-0.1.0-SNAPSHOT.jar')
+def frameworkJar = new File(frameworkDir, 'server/build/libs/kizuna-inventory-ui-framework-server-0.1.0-SNAPSHOT.jar')
+[bs3dJar, frameworkJar].each { dependency ->
+    if (!dependency.isFile()) {
+        throw new GradleException("需要本地上游产物：${dependency}")
+    }
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    withSourcesJar()
+}
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings 'net.fabricmc:yarn:1.20.1+build.10:v2'
+    modImplementation 'net.fabricmc:fabric-loader:0.16.10'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.3+1.20.1'
+    modApi files(bs3dJar)
+    modCompileOnly files(frameworkJar)
+    api 'local.meridian:server'
+    api 'com.google.protobuf:protobuf-java:4.36.2'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+def descriptor = layout.buildDirectory.file('descriptors/items-v1.desc')
+protobuf {
+    protoc { artifact = 'com.google.protobuf:protoc:4.36.2' }
+    generateProtoTasks {
+        ofSourceSet('main').configureEach { task ->
+            task.generateDescriptorSet = true
+            task.descriptorSetOptions.path = descriptor.get().asFile.path
+            task.descriptorSetOptions.includeImports = true
+            task.descriptorSetOptions.includeSourceInfo = true
+        }
+    }
+}
+
+processResources {
+    dependsOn tasks.named('generateProto')
+    from(descriptor) { into 'META-INF/kizuna_meridian_items/protocol' }
+}
+
+tasks.withType(Jar).configureEach {
+    from('LICENSE', 'LICENSE-BS3D', 'NOTICE', 'THIRD_PARTY_NOTICES.md')
+}
+
+// 作为宿主的服务端库交付；不自动安装事件、内容或独立网络通道。
+tasks.register('protocolZip', Zip) {
+    dependsOn tasks.named('generateProto')
+    archiveClassifier = 'proto'
+    from('src/main/proto')
+    from(descriptor) { into 'descriptors' }
+    from('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md')
+}
+tasks.named('assemble') { dependsOn tasks.named('protocolZip') }
