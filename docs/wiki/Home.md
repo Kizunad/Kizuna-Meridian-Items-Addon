@@ -12,7 +12,7 @@
 | 内容附属模组 | 具体物品、容器、物品模型及其注册、数值和玩法内容 |
 | 可信宿主 | 参与者身份、时间、线程调度及跨系统提交与恢复 |
 
-本仓库不包含模型或模型注册流程。Human、Meridian UI、Weights 等附属保持各自职责，具体接入按需求确认，不因同属这一生态就成为必需依赖。
+本仓库不包含模型或模型注册流程。Framework、Human、UI、Items、Vanilla-Damage、Vanilla-Healing、Human-UI、Players-Animation 在适用端整套必装，源码只按实际 API 关系依赖。BS3D 的 Weights 等外部附属不因同属生态自动成为源码依赖。
 
 ## 实现范围
 
@@ -148,6 +148,8 @@ BS3D 的 `optional` 是本地类型元数据，使用 JSON 并不等于另建 JS
 | `frameworkDir` | `../Kizuna-Inventory-UI-Framework` | 编译时使用其 server 产物；运行时由 BS3D 宿主提供对应路由模组 |
 
 BS3D 与 Inventory UI Framework 的服务端产物需先在各自工程构建。当前 Meridian 编译依据本地工作区，其中存在上游未提交变更；不将其宣称为稳定发布版。
+
+Items 对 Inventory UI 的 `modCompileOnly` 保持原样。目前 Items 源码直接使用 BS3D 的物品、库存 API，没有直接引用 Inventory UI 类型；BS3D 的 `VolumeServer` 实现 Inventory UI 的 `FabricServerModule` 并通过 `ServerModuleRegistry` 注册路由，BS3D 元数据强制依赖 `kizuna_inventory_ui_server`。因此 Inventory UI 是 BS3D 宿主路由的必需运行依赖，`compileOnly` 只说明 Items 不传递或嵌入它，不表示可以缺装。开发完整装配同时提供 BS3D 和 Inventory UI 服务端产物。
 
 ```bash
 ./gradlew assemble
