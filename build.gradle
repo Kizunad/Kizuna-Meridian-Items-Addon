@@ -24,7 +24,7 @@ dependencies {
     modImplementation libs.fabric.api
     // 组合进来的 Loom 工程直接取 named 开发 JAR：按坐标走 mod 重映射的缓存不随上游改动刷新，也不会先构建上游。
     api('local.bs3d:server') { targetConfiguration = 'namedElements' }
-    compileOnly('local.inventory-ui:server') { targetConfiguration = 'namedElements' }
+    compileOnly('dev.kizuna.inventoryui:server') { targetConfiguration = 'namedElements' }
     api 'local.meridian:server'
     api libs.protobuf.java
 }
