@@ -6,12 +6,12 @@ pluginManagement {
     }
 }
 
+// 相邻仓库位置、产物路径与第三方版本都由 Framework 的工作区脚本提供（kizunaWorkspace、libs）。
+apply from: new File(rootDir.parentFile, 'Kizuna-Meridian-Mod-Framework/scripts/workspace.gradle')
+
 rootProject.name = 'kizuna-meridian-items-addon'
 
-// 上游尚未发布坐标；使用独立仓库的实际工程，不复制源码或协议。
-includeBuild(providers.gradleProperty('meridianFrameworkDir')
-        .getOrElse('../Kizuna-Meridian-Mod-Framework')) {
-    dependencySubstitution {
-        substitute module('local.meridian:server') using project(':server')
-    }
-}
+// 上游尚未发布坐标；按清单目录组合独立仓库的实际工程，不复制源码或协议。
+kizunaWorkspace.includeSource('framework', [server: 'local.meridian:server'])
+kizunaWorkspace.includeSource('inventory-ui', [server: 'local.inventory-ui:server'])
+kizunaWorkspace.includeSource('bs3d', [server: 'local.bs3d:server'])

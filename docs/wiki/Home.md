@@ -137,19 +137,19 @@ BS3D 的 `optional` 是本地类型元数据，使用 JSON 并不等于另建 JS
 
 ## 构建、依赖与交付状态
 
-工程使用 Java 17、Gradle 8.8、Fabric Loom `1.6-SNAPSHOT`（本轮解析为 `1.6.12`）、Minecraft 1.20.1、Yarn `1.20.1+build.10`、Fabric Loader 0.16.10、Fabric API `0.92.3+1.20.1`、Protobuf 4.36.2。
+工程使用 Java 17 工具链编译、Gradle 8.14.6、Fabric Loom 1.13.6、Minecraft 1.20.1、Yarn `1.20.1+build.10`、Fabric Loader 0.16.10、Fabric API `0.92.3+1.20.1`、Protobuf 4.36.2；Loom 1.13 要求 Gradle 本身在 Java 21 上运行。`settings.gradle` 应用相邻 Meridian Framework 的 `scripts/workspace.gradle`，上述版本都取自其版本目录 `scripts/libs.versions.toml`。
 
-默认依赖目录可以通过 Gradle 属性调整：
+上游三个仓库都以 composite build 组合，只构建所需的 server 工程，不复制源码；默认在相邻目录查找，可用 Gradle 属性改指：
 
 | 属性 | 默认目录 | 使用方式 |
 |---|---|---|
-| `meridianFrameworkDir` | `../Kizuna-Meridian-Mod-Framework` | composite build，仅构建其 server 依赖，不复制源码 |
-| `bs3dDir` | `../backpack-and-storage-3D` | 使用 `server/build/libs/backpack-storage-3d-server-0.1.0-SNAPSHOT.jar` |
-| `frameworkDir` | `../Kizuna-Inventory-UI-Framework` | 编译时使用其 server 产物；运行时由 BS3D 宿主提供对应路由模组 |
+| `kizuna.dir.framework` | `../Kizuna-Meridian-Mod-Framework` | Meridian server 库，`api` 传递 |
+| `kizuna.dir.bs3d` | `../backpack-and-storage-3D` | BS3D server 的 named 开发 JAR，`api` 传递 |
+| `kizuna.dir.inventory-ui` | `../Kizuna-Inventory-UI-Framework` | 编译时使用其 server 的 named 开发 JAR；运行时由 BS3D 宿主提供对应路由模组 |
 
-BS3D 与 Inventory UI Framework 的服务端产物需先在各自工程构建。当前 Meridian 编译依据本地工作区，其中存在上游未提交变更；不将其宣称为稳定发布版。
+BS3D 与 Inventory UI Framework 的服务端工程随本仓构建先行编译。当前 Meridian 编译依据本地工作区，其中存在上游未提交变更；不将其宣称为稳定发布版。
 
-Items 对 Inventory UI 的 `modCompileOnly` 保持原样。目前 Items 源码直接使用 BS3D 的物品、库存 API，没有直接引用 Inventory UI 类型；BS3D 的 `VolumeServer` 实现 Inventory UI 的 `FabricServerModule` 并通过 `ServerModuleRegistry` 注册路由，BS3D 元数据强制依赖 `kizuna_inventory_ui_server`。因此 Inventory UI 是 BS3D 宿主路由的必需运行依赖，`compileOnly` 只说明 Items 不传递或嵌入它，不表示可以缺装。开发完整装配同时提供 BS3D 和 Inventory UI 服务端产物。
+Items 对 Inventory UI 只做 `compileOnly`。目前 Items 源码直接使用 BS3D 的物品、库存 API，没有直接引用 Inventory UI 类型；BS3D 的 `VolumeServer` 实现 Inventory UI 的 `FabricServerModule` 并通过 `ServerModuleRegistry` 注册路由，BS3D 元数据强制依赖 `kizuna_inventory_ui_server`。因此 Inventory UI 是 BS3D 宿主路由的必需运行依赖，`compileOnly` 只说明 Items 不传递或嵌入它，不表示可以缺装。开发完整装配同时提供 BS3D 和 Inventory UI 服务端产物。
 
 ```bash
 ./gradlew assemble

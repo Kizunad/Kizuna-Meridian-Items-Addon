@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
-    id 'fabric-loom' version '1.6-SNAPSHOT'
-    id 'com.google.protobuf' version '0.9.6'
+    alias(libs.plugins.fabric.loom)
+    alias(libs.plugins.protobuf)
 }
 
 group = 'dev.kizuna.meridian.items'
@@ -12,40 +12,31 @@ repositories {
     maven { url = 'https://maven.fabricmc.net/' }
 }
 
-def bs3dDir = file(findProperty('bs3dDir') ?: '../backpack-and-storage-3D')
-def frameworkDir = file(findProperty('frameworkDir') ?: '../Kizuna-Inventory-UI-Framework')
-def bs3dJar = new File(bs3dDir, 'server/build/libs/backpack-storage-3d-server-0.1.0-SNAPSHOT.jar')
-def frameworkJar = new File(frameworkDir, 'server/build/libs/kizuna-inventory-ui-framework-server-0.1.0-SNAPSHOT.jar')
-[bs3dJar, frameworkJar].each { dependency ->
-    if (!dependency.isFile()) {
-        throw new GradleException("需要本地上游产物：${dependency}")
-    }
-}
-
 java {
-    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    toolchain { languageVersion = JavaLanguageVersion.of(libs.versions.java.get().toInteger()) }
     withSourcesJar()
 }
 
 dependencies {
-    minecraft 'com.mojang:minecraft:1.20.1'
-    mappings 'net.fabricmc:yarn:1.20.1+build.10:v2'
-    modImplementation 'net.fabricmc:fabric-loader:0.16.10'
-    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.3+1.20.1'
-    modApi files(bs3dJar)
-    modCompileOnly files(frameworkJar)
+    minecraft libs.minecraft
+    mappings "net.fabricmc:yarn:${libs.versions.yarn.get()}:v2"
+    modImplementation libs.fabric.loader
+    modImplementation libs.fabric.api
+    // 组合进来的 Loom 工程直接取 named 开发 JAR：按坐标走 mod 重映射的缓存不随上游改动刷新，也不会先构建上游。
+    api('local.bs3d:server') { targetConfiguration = 'namedElements' }
+    compileOnly('local.inventory-ui:server') { targetConfiguration = 'namedElements' }
     api 'local.meridian:server'
-    api 'com.google.protobuf:protobuf-java:4.36.2'
+    api libs.protobuf.java
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.release = 17
+    options.release = libs.versions.java.get().toInteger()
     options.encoding = 'UTF-8'
 }
 
 def descriptor = layout.buildDirectory.file('descriptors/items-v1.desc')
 protobuf {
-    protoc { artifact = 'com.google.protobuf:protoc:4.36.2' }
+    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.java.get()}" }
     generateProtoTasks {
         ofSourceSet('main').configureEach { task ->
             task.generateDescriptorSet = true
