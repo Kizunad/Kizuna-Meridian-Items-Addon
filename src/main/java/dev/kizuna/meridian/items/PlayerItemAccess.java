@@ -1,6 +1,5 @@
 package dev.kizuna.meridian.items;
 
-import dev.kizuna.backpack3d.server.VolumeServer;
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.UseRequest;
 
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -19,12 +18,12 @@ public final class PlayerItemAccess implements ItemUseAccess<ServerPlayerEntity>
 
     @Override
     public Optional<String> authorize(ServerPlayerEntity player, Identifier trigger, UseRequest request) {
-        // 库存和 BS3D 会话只在逻辑服务器主线程访问；正在搬运时不能同时消费。
+        // 库存消费与 BS3D 即时搬运都在逻辑服务器主线程串行执行。
         var server = player.getServer();
         if (server == null || !server.isOnThread()) {
             return Optional.empty();
         }
-        if (!player.isAlive() || player.isSpectator() || VolumeServer.locked(player)) {
+        if (!player.isAlive() || player.isSpectator()) {
             return Optional.empty();
         }
         return policy.authorize(player, trigger, request);

@@ -41,7 +41,7 @@
 | `ItemRegistry.load` | 加载一组 `Contribution`，返回完整校验后的目录 |
 | `ItemRegistry.find` | 按真实物品类型和触发名查找绑定 |
 | `ItemUseAccess<C>` | 只读授权，返回稳定的可信调用者 ID |
-| `PlayerItemAccess` | Fabric 玩家检查包装器，检查主线程、存活、旁观状态及 BS3D 搬运锁 |
+| `PlayerItemAccess` | Fabric 玩家检查包装器，检查主线程、存活、旁观状态；与 BS3D 即时搬运串行执行 |
 | `ItemUseService<C>` | `trigger` 接受生成消息，`handle` 接受有界 Protobuf 字节 |
 | `ItemEffect<C>` | 在宿主提供的 Meridian 事务参与者中准备效果 |
 | `MeridianItemEffects.command` | 使用上游 `BodyCommandHandler` 准备一条权威命令，保留失败码 |
