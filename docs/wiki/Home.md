@@ -1,6 +1,6 @@
 # 物品 Registry 与接入边界
 
-本项目为经脉玩法提供通用物品登记、触发与消费编排。当前已实现可编译的 Java 17 服务端库；实际物品、具体效果与游戏宿主由接入方提供。API 尚未冻结，尚无真实游戏联调结果。
+本项目为经脉玩法提供通用物品登记、触发与消费编排。当前已实现可编译的 Java 25 / Minecraft 26.2 服务端库；实际物品、具体效果与游戏宿主由接入方提供。API 尚未冻结，尚无真实游戏联调结果。
 
 ## 职责归属
 
@@ -29,7 +29,7 @@
 
 本轮不支持消耗 BS3D 容器本体，包括空容器；容器本体可以绑定零消费触发。地面容器、页面光标、跨多个物品栈凑数量、耐久消费及使用后返还容器均未实现。不存在自动右键、命中或装备监听器，也不内置持续 buff 生命周期；宿主将真实事件映射为命名空间触发 ID。
 
-一次正消费只改变目标栈数量，扣完后删除该条目，保留其他物品、NBT、格位、旋转和实例身份。更新嵌套物品时只重建通向其真实根容器的路径；消费前后均由 BS3D 的 `ContainerTree` 校验。成功正消费使 BS3D 库存修订号增加一次。
+一次正消费只改变目标栈数量，扣完后删除该条目，保留其他物品、物品数据组件、格位、旋转和实例身份。更新嵌套物品时只重建通向其真实根容器的路径；消费前后均由 BS3D 的 `ContainerTree` 校验。成功正消费使 BS3D 库存修订号增加一次。
 
 ## 公开接口
 
@@ -38,14 +38,14 @@
 | 接口 | 用法 |
 |---|---|
 | `ItemBinding` | 声明 `id / item / trigger / effect / consumeCount` |
-| `ItemRegistry.load` | 加载一组 `Contribution`，返回完整校验后的目录 |
+| `ItemRegistry.load` | 加载一组 `Contribution`，返回完整校验后的目录；须在物品组件绑定后调用 |
 | `ItemRegistry.find` | 按真实物品类型和触发名查找绑定 |
 | `ItemUseAccess<C>` | 只读授权，返回稳定的可信调用者 ID |
 | `PlayerItemAccess` | Fabric 玩家检查包装器，检查主线程、存活、旁观状态；与 BS3D 即时搬运串行执行 |
 | `ItemUseService<C>` | `trigger` 接受生成消息，`handle` 接受有界 Protobuf 字节 |
 | `ItemEffect<C>` | 在宿主提供的 Meridian 事务参与者中准备效果 |
 | `MeridianItemEffects.command` | 使用上游 `BodyCommandHandler` 准备一条权威命令，保留失败码 |
-| `Bs3dInventory` | 真实个人库存的隔离副本；`resolve` 定位、`consume` 生成候选 |
+| `Bs3dInventory` | 真实个人库存的隔离副本，构造时传入服务器注册表供 BS3D 物品栈编解码；`resolve` 定位、`consume` 生成候选 |
 | `ItemUseStore<C>` | 宿主实现的联合提交、回滚、恢复与回执查询接口 |
 
 ### 绑定登记
@@ -54,10 +54,10 @@
 
 ```java
 var binding = new ItemBinding(
-        new ResourceLocation("example", "use_medicine"),
-        new ResourceLocation("example", "medicine"),
-        new ResourceLocation("example", "use"),
-        new ResourceLocation("example", "medicine_effect"),
+        Identifier.fromNamespaceAndPath("example", "use_medicine"),
+        Identifier.fromNamespaceAndPath("example", "medicine"),
+        Identifier.fromNamespaceAndPath("example", "use"),
+        Identifier.fromNamespaceAndPath("example", "medicine_effect"),
         1);
 
 var contribution = new ItemRegistry.Contribution<ServerPlayer>(
@@ -70,13 +70,15 @@ var registry = ItemRegistry.load("example-items-v1", List.of(contribution));
 
 同一贡献来源只出现一次，定义 ID 必须属于该来源的命名空间。引用的物品和效果可以属于其他来源，但必须实际存在。同一物品与触发名只能有一个绑定；需要复合效果时由一个效果提供者编排。消费件数位于 `[0,64]` 且不得超过物品单栈上限。
 
+26.2 的单栈上限是物品默认组件，原版在服务器数据加载时才绑定（客户端则在进服同步注册表时）。因此 `ItemRegistry.load` 不能放在模组初始化入口，须在此之后调用，例如 `ServerLifecycleEvents.SERVER_STARTING`；过早调用由原版报 `Components not bound yet`。
+
 `registry_revision` 由宿主发布内容时指定。更改绑定或效果行为必须更换该修订；它不能只反映 Item ID。新目录构造失败不会修改旧目录，宿主应保留旧目录并报告加载异常。本库不覆盖 BS3D 已注册的 `ItemMetadata`，也不再登记其模型或容器类型。
 
 ### 真实触发与物品请求
 
-`UseRequest` 包含协议版本 `1`、规范 UUID、绑定 ID、目录修订、目标身体 ID、物品来源、BS3D 库存修订和 `StackCodec.fingerprint`。来源二选一：原版槽号，或随身容器内物品 / 穿戴容器的实例 UUID。栈指纹包含数量及完整 NBT；即使原版操作没有增加 BS3D 修订，栈发生变化也会被拒绝。
+`UseRequest` 包含协议版本 `1`、规范 UUID、绑定 ID、目录修订、目标身体 ID、物品来源、BS3D 库存修订和 `StackCodec.fingerprint`（传入服务器注册表）。来源二选一：原版槽号，或随身容器内物品 / 穿戴容器的实例 UUID。栈指纹包含数量及完整物品数据组件；即使原版操作没有增加 BS3D 修订，栈发生变化也会被拒绝。
 
-客户端不能指定消费数量、效果实现或物品 NBT。`trustedTrigger` 是服务端事件参数，不在请求协议中。客户端选择身体 ID 不授予访问权；宿主策略须核实身体归属、事件来源和物品位置是否符合此次事件，例如右键事件是否确实指向当前手持槽位。
+客户端不能指定消费数量、效果实现或物品数据。`trustedTrigger` 是服务端事件参数，不在请求协议中。客户端选择身体 ID 不授予访问权；宿主策略须核实身体归属、事件来源和物品位置是否符合此次事件，例如右键事件是否确实指向当前手持槽位。
 
 ```java
 var service = new ItemUseService<>(registry, new PlayerItemAccess(hostPolicy), jointStore);
@@ -137,15 +139,15 @@ BS3D 的 `optional` 是本地类型元数据，使用 JSON 并不等于另建 JS
 
 ## 构建、依赖与交付状态
 
-工程使用 Java 17 工具链编译、Gradle 8.14.6、Fabric Loom 1.13.6、Minecraft 1.20.1、Mojang 官方映射、Fabric Loader 0.16.10、Fabric API `0.92.3+1.20.1`、Protobuf 4.36.2；Loom 1.13 要求 Gradle 本身在 Java 21 上运行。`settings.gradle` 应用相邻 Meridian Framework 的 `scripts/workspace.gradle`，上述版本都取自其版本目录 `scripts/libs.versions.toml`。
+工程使用 Java 25 工具链编译、Gradle 9.8.0、Fabric Loom 1.19.3、Minecraft 26.2（不混淆，无映射）、Fabric Loader 0.20.1、Fabric API `0.161.0+26.2`、Protobuf 4.36.2；Gradle 本身须在 Java 25 上运行。`settings.gradle` 应用相邻 Meridian Framework 的 `scripts/workspace.gradle`，上述版本都取自其版本目录 `scripts/libs.versions.toml`。
 
 上游三个仓库都以 composite build 组合，只构建所需的 server 工程，不复制源码；默认在相邻目录查找，可用 Gradle 属性改指：
 
 | 属性 | 默认目录 | 使用方式 |
 |---|---|---|
 | `kizuna.dir.framework` | `../Kizuna-Meridian-Mod-Framework` | Meridian server 库，`api` 传递 |
-| `kizuna.dir.bs3d` | `../backpack-and-storage-3D` | BS3D server 的 named 开发 JAR，`api` 传递 |
-| `kizuna.dir.inventory-ui` | `../Kizuna-Inventory-UI-Framework` | 编译时使用其 server 的 named 开发 JAR；运行时由 BS3D 宿主提供对应路由模组 |
+| `kizuna.dir.bs3d` | `../backpack-and-storage-3D` | BS3D server 工程的 JAR，`api` 传递 |
+| `kizuna.dir.inventory-ui` | `../Kizuna-Inventory-UI-Framework` | 编译时使用其 server 工程的 JAR；运行时由 BS3D 宿主提供对应路由模组 |
 
 BS3D 与 Inventory UI Framework 的服务端工程随本仓构建先行编译。当前 Meridian 编译依据本地工作区，其中存在上游未提交变更；不将其宣称为稳定发布版。
 
@@ -155,10 +157,10 @@ Items 对 Inventory UI 只做 `compileOnly`。目前 Items 源码直接使用 BS
 ./gradlew assemble
 ```
 
-产物位于 `build/libs/`：供 Fabric 宿主嵌入的 remapped JAR、源码 JAR 和协议 ZIP。协议 ZIP 包含本库 schema 及含导入定义的描述集；不复制上游 schema 源文件。跨语言接入可以读取描述集，或使用上游原始契约与本库 schema 一起生成。
+产物为 `build/libs/` 下供 Fabric 宿主嵌入的 JAR（26.2 不混淆，不再重映射）与源码 JAR，以及 `build/distributions/` 下的协议 ZIP。协议 ZIP 包含本库 schema 及含导入定义的描述集；不复制上游 schema 源文件。跨语言接入可以读取描述集，或使用上游原始契约与本库 schema 一起生成。
 
 运行库不内嵌 Meridian / BS3D，也不包含 `fabric.mod.json` 或自动事件入口。宿主负责以库依赖加载、提供这些运行依赖及注册真实事件；不能直接把本 JAR 放进 `mods/` 当作独立模组。服务端源码不引用客户端或渲染类，单机可复用相同库。
 
-已执行编译与打包，并通过 Fabric JUnit 运行临时注册测试，7 组检查全部通过：登记与查找、重复登记拒绝、缺失引用拒绝、触发消费、幂等重放、触发及库存版本校验、效果拒绝时不提交消费。测试使用真实 Minecraft 物品注册表和临时内存宿主，代码保留在被忽略的 `build/` 下，不纳入长期测试集或生产产物。尚未验证真实玩家存档、Meridian 身体效果、游戏事件与网络路由或崩溃恢复。
+26.2 上已执行编译与打包，并通过 Fabric JUnit 运行临时注册测试，8 组检查全部通过：组件绑定前加载目录报错、登记与查找、重复登记拒绝、缺失引用拒绝、触发消费、幂等重放、触发及库存版本校验、效果拒绝时不提交消费。测试使用真实 Minecraft 物品注册表、原版内置注册表查找和临时内存宿主，属一次性验证，不纳入长期测试集或生产产物。尚未验证真实玩家存档、Meridian 身体效果、游戏事件与网络路由或崩溃恢复。
 
 [返回 README](../../README.md)

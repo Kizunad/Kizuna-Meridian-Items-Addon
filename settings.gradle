@@ -14,5 +14,6 @@ rootProject.name = 'kizuna-meridian-items-addon'
 // 上游尚未发布坐标；按清单目录组合独立仓库的实际工程，不复制源码或协议。
 kizunaWorkspace.includeSource('framework', [server: 'local.meridian:server'])
 // 替换键一律用各工程自身的 group 与工程名，与 Human 等仓的登记一致：同一仓库在嵌套组合里只按最先登记的规则替换，键不一致时另一方解析不到。
-kizunaWorkspace.includeSource('inventory-ui', [server: 'dev.kizuna.inventoryui:server'])
+// Loom 1.19 在配置期解析组合进来的 bs3d 客户端运行依赖，Inventory UI 根工程坐标也须登记替换，即使本仓只用其 server。
+kizunaWorkspace.includeSource('inventory-ui', ['': 'dev.kizuna.inventoryui:kizuna-inventory-ui-framework', server: 'dev.kizuna.inventoryui:server'])
 kizunaWorkspace.includeSource('bs3d', [server: 'dev.kizuna.backpack3d:server'])

@@ -8,7 +8,7 @@
 - 不添加、注册或分发物品模型及其他视觉/音效资源。
 - 不维护独立的身体、经脉、真元或容器库存状态。
 - Meridian 负责权威经脉玩法；BS3D 负责真实物品身份、容器库存与物品转移。本模组通过两者已核实的公开接口连接玩法与物品。
-- 不接受客户端物品 NBT 来创建或修改服务端物品，不建立旁路库存事务或网络协议。
+- 不接受客户端提交的物品数据来创建或修改服务端物品，不建立旁路库存事务或网络协议。
 
 已实现第一版服务端库：不可变绑定目录、可信事件触发、BS3D 个人库存消费候选、联合事务编排及幂等回执。具体效果由附属实现，可通过适配器调用 Meridian 权威命令。
 
@@ -16,7 +16,7 @@
 
 ## 构建与接入
 
-Java 17、Minecraft 1.20.1、Gradle 8.14.6、Fabric Loom 1.13.6（Gradle 本身须在 Java 21 上运行）。默认使用同级 Meridian 源码工程，以及已经构建的 BS3D / Inventory UI Framework 服务端 JAR。
+Java 25、Minecraft 26.2、Gradle 9.8.0、Fabric Loom 1.19.3（Gradle 本身须在 Java 25 上运行）。默认以组合构建使用同级 Meridian、BS3D 与 Inventory UI Framework 的服务端源码工程。
 
 ```bash
 ./gradlew assemble

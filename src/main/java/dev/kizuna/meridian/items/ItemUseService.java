@@ -7,7 +7,7 @@ import dev.kizuna.meridian.items.protocol.pb.ItemMessages.*;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** 服务端触发编排；物品数量、效果及提交回执都由同一可信目录和事务决定。 */
 public final class ItemUseService<C> {
@@ -23,7 +23,7 @@ public final class ItemUseService<C> {
         this.store = Objects.requireNonNull(store, "联合事务宿主不可缺省");
     }
 
-    public UseResponse handle(C trustedContext, ResourceLocation trustedTrigger, byte[] payload) {
+    public UseResponse handle(C trustedContext, Identifier trustedTrigger, byte[] payload) {
         // 此方法供宿主既有路由调用，不注册通道，也不把包内数据当作真实触发事件。
         if (payload == null || payload.length > ItemProtocol.MAX_REQUEST_BYTES) {
             return failed("", FailureCode.INVALID_REQUEST);
@@ -35,7 +35,7 @@ public final class ItemUseService<C> {
         }
     }
 
-    public UseResponse trigger(C trustedContext, ResourceLocation trustedTrigger, UseRequest request) {
+    public UseResponse trigger(C trustedContext, Identifier trustedTrigger, UseRequest request) {
         // 非法请求不进入宿主；可信身份确认后才允许读取库存、身体或历史回执。
         try {
             ItemProtocol.validate(request);
@@ -62,7 +62,7 @@ public final class ItemUseService<C> {
         }
     }
 
-    private UseResponse execute(C context, ResourceLocation trigger, String caller, UseRequest request,
+    private UseResponse execute(C context, Identifier trigger, String caller, UseRequest request,
                                 ItemUseStore.Transaction transaction) {
         // 等待事务期间可能发生撤权；回执查询前和最终暂存前都重新核对身份。
         authorize(context, trigger, caller, request);
@@ -86,7 +86,7 @@ public final class ItemUseService<C> {
         }
         var stack = inventory.resolve(request.getSource());
         if (!BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(binding.item())
-                || !StackCodec.fingerprint(stack).equals(request.getStackFingerprint())) {
+                || !StackCodec.fingerprint(stack, inventory.registries()).equals(request.getStackFingerprint())) {
             throw new ItemUseRejected(FailureCode.ITEM_CHANGED);
         }
         // 先确认代价可支付再准备效果；候选尚未发布，任一步拒绝都不会扣物品。
@@ -104,14 +104,14 @@ public final class ItemUseService<C> {
         return response(request.getRequestId()).setCommitted(committed).build();
     }
 
-    private void authorize(C context, ResourceLocation trigger, String caller, UseRequest request) {
+    private void authorize(C context, Identifier trigger, String caller, UseRequest request) {
         // 必须维持同一可信调用者；授权回调不得执行效果或保留事务对象。
         if (!access.authorize(context, trigger, request).equals(Optional.of(caller))) {
             throw new ItemUseRejected(FailureCode.ACCESS_DENIED);
         }
     }
 
-    private static UseResponse replay(String caller, ResourceLocation trigger, UseRequest request,
+    private static UseResponse replay(String caller, Identifier trigger, UseRequest request,
                                       UseReceipt receipt) {
         // 即使物品已用完或目录升级，完全相同的已提交请求也只返回原回执。
         ItemProtocol.validate(receipt.getRequest());

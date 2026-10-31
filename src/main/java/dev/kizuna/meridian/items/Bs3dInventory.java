@@ -11,22 +11,29 @@ import dev.kizuna.meridian.items.protocol.pb.ItemMessages.ItemSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 
 /** BS3D 真实个人库存的隔离副本及消费候选；不是另一份库存或持久化入口。 */
 public final class Bs3dInventory {
+    private final HolderLookup.Provider registries;
     private final SavedInventory data;
     private final List<ItemStack> slots;
 
-    public Bs3dInventory(SavedInventory data, List<ItemStack> slots) {
-        // 由宿主在事务内提供真实来源；拒绝旧布局，迁移仍归 BS3D 所有。
+    public Bs3dInventory(HolderLookup.Provider registries, SavedInventory data, List<ItemStack> slots) {
+        // 由宿主在事务内提供真实来源及服务器注册表（物品栈编解码需要）；拒绝旧布局，迁移仍归 BS3D 所有。
+        this.registries = Objects.requireNonNull(registries, "registries");
         this.data = Objects.requireNonNull(data, "inventory data");
         this.slots = copySlots(slots);
         if (data.getFormatVersion() != TransferService.SAVE_VERSION) {
             throw new IllegalArgumentException("需要 BS3D 当前真实容器存档布局");
         }
-        TransferService.validate(data);
-        new ContainerTree(data, this.slots);
+        TransferService.validate(data, registries);
+        new ContainerTree(registries, data, this.slots);
+    }
+
+    public HolderLookup.Provider registries() {
+        return registries;
     }
 
     public SavedInventory data() {
@@ -47,11 +54,11 @@ public final class Bs3dInventory {
             }
             return slots.get(slot).copy();
         }
-        var tree = new ContainerTree(data, copySlots(slots));
+        var tree = new ContainerTree(registries, data, copySlots(slots));
         return tree.items().stream()
                 .filter(item -> item.getId().equals(source.getStoredItemId()))
                 .findFirst()
-                .map(item -> StackCodec.decode(item.getStackNbt()))
+                .map(item -> StackCodec.decode(item.getStackNbt(), registries))
                 .orElseThrow(() -> new ItemUseRejected(FailureCode.ITEM_CHANGED));
     }
 
@@ -88,21 +95,21 @@ public final class Bs3dInventory {
             }
             for (int index = 0; index < data.getWornCount() && !found; index++) {
                 var worn = data.getWorn(index);
-                var replacement = replace(StackCodec.decode(worn.getStackNbt()), target, stack);
+                var replacement = replace(StackCodec.decode(worn.getStackNbt(), registries), target, stack);
                 found = replacement.found();
                 if (found) {
                     nextData.setWorn(index, worn.toBuilder()
-                            .setStackNbt(StackCodec.encode(replacement.stack())));
+                            .setStackNbt(StackCodec.encode(replacement.stack(), registries)));
                 }
             }
             if (!found) {
                 throw new IllegalStateException("已定位的个人物品没有可写回的根容器");
             }
         }
-        return new Bs3dInventory(nextData.build(), nextSlots);
+        return new Bs3dInventory(registries, nextData.build(), nextSlots);
     }
 
-    private static Replacement replace(ItemStack root, String target, ItemStack remaining) {
+    private Replacement replace(ItemStack root, String target, ItemStack remaining) {
         // 校验、深度和身份唯一性已交给 ContainerTree；这里只通过公开 API 更新候选内容。
         if (ContainerItems.definition(root) == null) {
             return new Replacement(root, false);
@@ -114,14 +121,14 @@ public final class Bs3dInventory {
                 if (remaining.isEmpty()) {
                     items.remove(index);
                 } else {
-                    items.set(index, item.toBuilder().setStackNbt(StackCodec.encode(remaining)).build());
+                    items.set(index, item.toBuilder().setStackNbt(StackCodec.encode(remaining, registries)).build());
                 }
             } else {
-                var child = replace(StackCodec.decode(item.getStackNbt()), target, remaining);
+                var child = replace(StackCodec.decode(item.getStackNbt(), registries), target, remaining);
                 if (!child.found()) {
                     continue;
                 }
-                items.set(index, item.toBuilder().setStackNbt(StackCodec.encode(child.stack())).build());
+                items.set(index, item.toBuilder().setStackNbt(StackCodec.encode(child.stack(), registries)).build());
             }
             var next = root.copy();
             ContainerItems.setContents(next, items);

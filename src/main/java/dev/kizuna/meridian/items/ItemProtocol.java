@@ -5,7 +5,7 @@ import dev.kizuna.backpack3d.service.TransferService;
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.ItemSource;
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.UseRequest;
 import java.nio.charset.StandardCharsets;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** 只校验本项目契约，不解码客户端物品数据。 */
 final class ItemProtocol {
@@ -50,10 +50,10 @@ final class ItemProtocol {
         }
     }
 
-    static ResourceLocation id(String value) {
+    static Identifier id(String value) {
         // 要求规范 namespace:path，不能将缺省命名空间静默补为 minecraft。
         requireText(value, "命名标识", 256);
-        var id = ResourceLocation.tryParse(value);
+        var id = Identifier.tryParse(value);
         if (id == null || !id.toString().equals(value)) {
             throw new IllegalArgumentException("必须使用完整命名空间标识");
         }
