@@ -50,17 +50,17 @@
 
 ### 绑定登记
 
-附属先注册自身物品，再提供目录贡献；示例中的 `example:medicine` 必须已经是实际注册的物品，`medicineEffect` 是附属提供的 `ItemEffect<ServerPlayerEntity>`。
+附属先注册自身物品，再提供目录贡献；示例中的 `example:medicine` 必须已经是实际注册的物品，`medicineEffect` 是附属提供的 `ItemEffect<ServerPlayer>`。
 
 ```java
 var binding = new ItemBinding(
-        new Identifier("example", "use_medicine"),
-        new Identifier("example", "medicine"),
-        new Identifier("example", "use"),
-        new Identifier("example", "medicine_effect"),
+        new ResourceLocation("example", "use_medicine"),
+        new ResourceLocation("example", "medicine"),
+        new ResourceLocation("example", "use"),
+        new ResourceLocation("example", "medicine_effect"),
         1);
 
-var contribution = new ItemRegistry.Contribution<ServerPlayerEntity>(
+var contribution = new ItemRegistry.Contribution<ServerPlayer>(
         "example",
         List.of(binding),
         Map.of(binding.effect(), medicineEffect));

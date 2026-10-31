@@ -2,8 +2,7 @@ package dev.kizuna.meridian.items;
 
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.UseRequest;
 import dev.kizuna.meridian.server.BodyTransactionStore;
-
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /** 附属实现具体效果；仅允许在传入的联合事务参与者中暂存变更。 */
 @FunctionalInterface

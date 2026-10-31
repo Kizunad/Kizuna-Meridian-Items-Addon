@@ -19,7 +19,7 @@ java {
 
 dependencies {
     minecraft libs.minecraft
-    mappings "net.fabricmc:yarn:${libs.versions.yarn.get()}:v2"
+    mappings loom.officialMojangMappings()
     modImplementation libs.fabric.loader
     modImplementation libs.fabric.api
     // 组合进来的 Loom 工程直接取 named 开发 JAR：按坐标走 mod 重映射的缓存不随上游改动刷新，也不会先构建上游。

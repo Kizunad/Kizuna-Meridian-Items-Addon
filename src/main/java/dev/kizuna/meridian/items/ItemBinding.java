@@ -1,12 +1,11 @@
 package dev.kizuna.meridian.items;
 
-import net.minecraft.util.Identifier;
-
 import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
 /** 附属声明的物品类型、真实事件、效果及单次消费件数。 */
-public record ItemBinding(Identifier id, Identifier item, Identifier trigger,
-                          Identifier effect, int consumeCount) {
+public record ItemBinding(ResourceLocation id, ResourceLocation item, ResourceLocation trigger,
+                          ResourceLocation effect, int consumeCount) {
     public ItemBinding {
         // 数量由可信登记决定；零表示仅触发，不能以负数表达发放。
         Objects.requireNonNull(id, "binding id");

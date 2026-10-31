@@ -8,12 +8,10 @@ import dev.kizuna.backpack3d.service.ContainerTree;
 import dev.kizuna.backpack3d.service.TransferService;
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.FailureCode;
 import dev.kizuna.meridian.items.protocol.pb.ItemMessages.ItemSource;
-
-import net.minecraft.item.ItemStack;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import net.minecraft.world.item.ItemStack;
 
 /** BS3D 真实个人库存的隔离副本及消费候选；不是另一份库存或持久化入口。 */
 public final class Bs3dInventory {
@@ -72,7 +70,7 @@ public final class Bs3dInventory {
         if (stack.getCount() < count) {
             throw new ItemUseRejected(FailureCode.INSUFFICIENT_ITEMS);
         }
-        stack.decrement(count);
+        stack.shrink(count);
         var nextSlots = copySlots(slots);
         var nextData = data.toBuilder().setRevision(Math.addExact(data.getRevision(), 1));
         if (source.hasPlayerSlot()) {
