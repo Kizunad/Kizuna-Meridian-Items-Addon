@@ -16,7 +16,7 @@
 
 ## 构建与接入
 
-Java 17、Minecraft 1.20.1、Gradle 8.8。默认使用同级 Meridian 源码工程，以及已经构建的 BS3D / Inventory UI Framework 服务端 JAR。
+Java 17、Minecraft 1.20.1、Gradle 8.14.6、Fabric Loom 1.13.6（Gradle 本身须在 Java 21 上运行）。默认使用同级 Meridian 源码工程，以及已经构建的 BS3D / Inventory UI Framework 服务端 JAR。
 
 ```bash
 ./gradlew assemble
