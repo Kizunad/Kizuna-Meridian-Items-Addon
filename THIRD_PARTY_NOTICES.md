@@ -11,7 +11,7 @@
 | [Kizuna Inventory UI Framework](https://github.com/Kizunad/Kizuna-Inventory-UI-Framework) | MIT | `0.1.0-SNAPSHOT` 本地 server JAR，仅编译依赖；运行时由 BS3D 宿主提供 |
 | [Protocol Buffers](https://github.com/protocolbuffers/protobuf) | BSD 3-Clause | Java 运行库及 protoc `4.36.2`；只分发本项目 schema 的生成类，运行库不内嵌 |
 | [Fabric Loader](https://github.com/FabricMC/fabric-loader) / [Fabric API](https://github.com/FabricMC/fabric) | Apache-2.0 | `0.16.10` / `0.92.3+1.20.1`，开发及宿主运行依赖，不内嵌 |
-| [Fabric Loom](https://github.com/FabricMC/fabric-loom) / [Yarn](https://github.com/FabricMC/yarn) | MIT / CC0-1.0 | Loom `1.6.12`、Yarn `1.20.1+build.10`，构建与映射使用，不分发映射或 Minecraft 类 |
+| [Fabric Loom](https://github.com/FabricMC/fabric-loom) | MIT | Loom `1.6.12`，构建与映射使用，不分发映射或 Minecraft 类 |
 | [Gradle](https://github.com/gradle/gradle) | Apache-2.0 及其附带组件许可 | Wrapper `8.8` 随源码分发；原发行包许可与声明保存于 `LICENSE-GRADLE` / `NOTICE-GRADLE` |
 | [Protobuf Gradle Plugin](https://github.com/google/protobuf-gradle-plugin) | Apache-2.0 | `0.9.6`，仅构建插件，不内嵌 |
 | Minecraft | Mojang/Microsoft 专有许可及 EULA | `1.20.1`，仅由开发环境和游戏宿主提供，不分发游戏代码 |

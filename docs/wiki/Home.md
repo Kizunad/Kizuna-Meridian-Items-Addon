@@ -137,7 +137,7 @@ BS3D 的 `optional` 是本地类型元数据，使用 JSON 并不等于另建 JS
 
 ## 构建、依赖与交付状态
 
-工程使用 Java 17 工具链编译、Gradle 8.14.6、Fabric Loom 1.13.6、Minecraft 1.20.1、Yarn `1.20.1+build.10`、Fabric Loader 0.16.10、Fabric API `0.92.3+1.20.1`、Protobuf 4.36.2；Loom 1.13 要求 Gradle 本身在 Java 21 上运行。`settings.gradle` 应用相邻 Meridian Framework 的 `scripts/workspace.gradle`，上述版本都取自其版本目录 `scripts/libs.versions.toml`。
+工程使用 Java 17 工具链编译、Gradle 8.14.6、Fabric Loom 1.13.6、Minecraft 1.20.1、Mojang 官方映射、Fabric Loader 0.16.10、Fabric API `0.92.3+1.20.1`、Protobuf 4.36.2；Loom 1.13 要求 Gradle 本身在 Java 21 上运行。`settings.gradle` 应用相邻 Meridian Framework 的 `scripts/workspace.gradle`，上述版本都取自其版本目录 `scripts/libs.versions.toml`。
 
 上游三个仓库都以 composite build 组合，只构建所需的 server 工程，不复制源码；默认在相邻目录查找，可用 Gradle 属性改指：
 
