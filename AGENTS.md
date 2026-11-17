@@ -31,11 +31,21 @@
 ## 文档、许可与验证
 
 - README 是项目入口，详细接入说明的唯一编辑来源为 `docs/wiki/`。公开 API、登记语义、依赖或兼容范围变化时同步更新文档；明确区分设计、实现、构建验证、真实游戏验证与发布状态。
-- 使用 `./gradlew`、依赖目录或其他构建方式前，先核实项目实际存在的构建配置和依赖入口。未建立的任务不得写成验证要求或已通过结果。
+- 使用构建工具、依赖目录或其他构建方式前，先核实项目实际存在的构建配置和依赖入口。未建立的任务不得写成验证要求或已通过结果。
 - 验证按改动范围执行。只有真实 Minecraft/Fabric 宿主运行才能证明游戏内接入；编译或单元测试不能代替游戏联调。
 - 长期只保留公开契约、关键跨模块交互和已知缺陷所需的整体回归；不为工程骨架添加占位测试。临时验证脚本不纳入长期测试集，测试夹具不进入生产产物。
 - 本项目原创代码和文档遵循 Meridian Framework 的 PolyForm Noncommercial 1.0.0，见 `LICENSE`。BS3D 原有代码及其衍生部分保留 MIT 条款与版权声明，见 `LICENSE-BS3D`；仅调用 BS3D API 不自动改变本项目原创文件的许可。两个许可不构成可任选的双重许可。
 - 引入第三方依赖或许可材料时，记录来源、版本、许可与分发方式并保留声明；参见 `NOTICE` 与 `THIRD_PARTY_NOTICES.md`。公开 GitHub 仓库不代表放弃非商业限制。
+
+## 构建和测试
+
+构建、测试一律走工作区的 `kz`（`~/Code/Kizuna-remote-session/scripts/kz`），不直接运行 `./gradlew`。细则以 `~/Code/Kizuna-remote-session/handoff/codex-worker-rules.md` 为准，动手前先读。
+
+- 单测、构建和服务端 GameTest：`kz test ~/Code/<本仓的 worktree>`
+- 要带上别的仓的 worktree 一起测：每个加一次 `--with ~/Code/<那个仓的 worktree>`
+- 客户端测试：`kz client ~/Code/<本仓的 worktree>` 列出有哪些项，`kz client ~/Code/<本仓的 worktree> <项>` 跑其中一项
+- 要自己写 Gradle 参数时：`kz gradle ~/Code/<本仓的 worktree> -- <参数>`
+- 不提交、不推送；在自己的 worktree（`~/Code/wt-*`）里改，不改主目录。
 
 ## Git 协作
 
